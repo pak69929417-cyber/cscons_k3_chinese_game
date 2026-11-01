@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公園句式語音大冒險 - 幼兒雙人聽音選字遊戲</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .word-card {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0 #cbd5e1;
+        }
+        .word-card:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #cbd5e1;
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse-speaker {
+            animation: pulseSpeaker 1.5s infinite;
+        }
+        @keyframes pulseSpeaker {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        .glow-p1 {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+            border-color: #3b82f6 !important;
+        }
+        .glow-p2 {
+            box-shadow: 0 0 25px rgba(244, 63, 94, 0.6);
+            border-color: #f43f5e !important;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .toast-notification {
+            animation: toastIn 0.3s ease-out forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header / Top Bar -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-amber-200 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-4xl">🌳</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black text-amber-600 tracking-wide">公園句式語音大冒險</h1>
+                    <p class="text-xs text-amber-800 font-bold">適合 K2-K3 幼兒 ‧ 聽音選字遊戲</p>
+                </div>
+            </div>
+            <button onclick="showInstructions()" class="p-2.5 sm:p-3 bg-sky-100 hover:bg-sky-200 text-sky-800 rounded-2xl transition font-black flex items-center gap-2 text-sm md:text-base">
+                <i class="fas fa-child text-lg md:text-xl"></i>
+                <span>玩法說明</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 flex flex-col justify-center">
+
+        <!-- SCREEN 1: Start Menu -->
+        <div id="screen-menu" class="bg-white/95 backdrop-blur rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-amber-300 max-w-2xl mx-auto text-center space-y-6 bounce-in">
+            <div class="inline-block bg-amber-100 text-amber-800 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full">
+                🎧 純語音提示 ‧ 聽音選字遊戲
+            </div>
+
+            <!-- Player Mode Selector -->
+            <div class="flex justify-center gap-4 bg-amber-50 p-2 rounded-2xl border-2 border-amber-200">
+                <button id="btn-mode-1p" onclick="selectPlayerMode(1)" class="flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-amber-500 text-white shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-user"></i> 單人遊玩 (5題)
+                </button>
+                <button id="btn-mode-2p" onclick="selectPlayerMode(2)" class="flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-white text-slate-600 hover:bg-amber-100 flex items-center justify-center gap-2">
+                    <i class="fas fa-users"></i> 雙人對決 (每人5題)
+                </button>
+            </div>
+
+            <h2 class="text-2xl md:text-3xl font-black text-slate-800">選擇遊戲關卡</h2>
+            <p class="text-slate-600 font-bold text-sm md:text-base">題目沒有文字提示，請專心聽廣東話語音，選出正確的字詞卡吧！</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <!-- Mode 1 -->
+                <button onclick="startGame(1)" class="group p-5 bg-gradient-to-b from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white rounded-3xl shadow-lg transition transform hover:-translate-y-1 flex flex-col items-center">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-4xl mb-2 group-hover:scale-110 transition">
+                        🏞️
+                    </div>
+                    <span class="text-xl font-black">第一關</span>
+                    <span class="text-xs font-bold opacity-90 mt-1">地點 有 設施</span>
+                </button>
+
+                <!-- Mode 2 -->
+                <button onclick="startGame(2)" class="group p-5 bg-gradient-to-b from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white rounded-3xl shadow-lg transition transform hover:-translate-y-1 flex flex-col items-center">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-4xl mb-2 group-hover:scale-110 transition">
+                        🏃‍♂️
+                    </div>
+                    <span class="text-xl font-black">第二關</span>
+                    <span class="text-xs font-bold opacity-90 mt-1">我到 設施 活動</span>
+                </button>
+
+                <!-- Mode 3 -->
+                <button onclick="startGame(3)" class="group p-5 bg-gradient-to-b from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white rounded-3xl shadow-lg transition transform hover:-translate-y-1 flex flex-col items-center">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-4xl mb-2 group-hover:scale-110 transition">
+                        🏆
+                    </div>
+                    <span class="text-xl font-black">第三關</span>
+                    <span class="text-xs font-bold opacity-90 mt-1">雙句式大挑戰</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Main Gameplay -->
+        <div id="screen-game" class="hidden flex-col gap-4">
+            
+            <!-- Scoreboard & Player Turn -->
+            <div id="scoreboard-grid" class="grid grid-cols-2 gap-4">
+                <!-- Player 1 -->
+                <div id="p1-card" class="bg-blue-500 text-white rounded-3xl p-3 sm:p-4 shadow-md flex items-center justify-between border-4 border-blue-300 transition-all transform duration-300">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl sm:text-3xl">🐶</div>
+                        <div>
+                            <div id="p1-label" class="text-[10px] sm:text-xs font-bold text-blue-100">玩家一 (P1)</div>
+                            <div id="p1-name" class="text-sm sm:text-xl font-black">藍隊小狗</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] sm:text-xs font-bold text-blue-100">得分</div>
+                        <div id="p1-score" class="text-2xl sm:text-3xl font-black">0</div>
+                    </div>
+                </div>
+
+                <!-- Player 2 (Hidden in 1P mode) -->
+                <div id="p2-card" class="bg-rose-500 text-white rounded-3xl p-3 sm:p-4 shadow-md flex items-center justify-between border-4 border-rose-300 transition-all transform duration-300">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl sm:text-3xl">🐱</div>
+                        <div>
+                            <div class="text-[10px] sm:text-xs font-bold text-rose-100">玩家二 (P2)</div>
+                            <div class="text-sm sm:text-xl font-black">紅隊小貓</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] sm:text-xs font-bold text-rose-100">得分</div>
+                        <div id="p2-score" class="text-2xl sm:text-3xl font-black">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Turn & Round Counter -->
+            <div class="bg-white/90 backdrop-blur rounded-2xl p-3 text-center shadow-sm border border-slate-200 flex justify-between items-center px-4 sm:px-6">
+                <div class="text-slate-500 font-black text-xs sm:text-base">
+                    第 <span id="current-round" class="text-amber-600 text-lg sm:text-xl font-black">1</span> / <span id="total-rounds">5</span> 題
+                </div>
+                <div id="turn-banner" class="text-xs sm:text-lg font-black px-3 sm:px-5 py-1.5 rounded-full bg-blue-100 text-blue-700">
+                    輪到：到小狗啦！ (藍隊 🐶)
+                </div>
+                <button onclick="returnToMenu()" class="text-slate-400 hover:text-slate-600 font-bold text-xs sm:text-base flex items-center gap-1">
+                    <i class="fas fa-home"></i>選關
+                </button>
+            </div>
+
+            <!-- Main Play Area -->
+            <div class="bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-8 shadow-xl border-4 border-amber-300 flex flex-col items-center space-y-6">
+                
+                <!-- Voice Prompt Section -->
+                <div class="w-full bg-gradient-to-r from-amber-100 to-orange-100 border-3 border-amber-300 rounded-3xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                    <div class="flex items-center gap-4 text-center sm:text-left">
+                        <div id="target-icon" class="text-5xl sm:text-6xl bg-white p-3 rounded-2xl shadow-sm">
+                            🌳
+                        </div>
+                        <div>
+                            <div class="text-xs font-black text-amber-800 uppercase tracking-wider mb-1">請聽題目作答：</div>
+                            <div class="text-lg sm:text-xl font-black text-slate-700">專心聽語音，選出正確字卡！</div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Button -->
+                    <button onclick="playTargetAudio()" class="pulse-speaker px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 active:scale-95 text-white font-black text-xl sm:text-2xl rounded-2xl shadow-lg border-2 border-amber-200 transition flex items-center gap-3">
+                        <i class="fas fa-volume-up text-2xl sm:text-3xl"></i>
+                        <span>🔊 再聽一次</span>
+                    </button>
+                </div>
+
+                <!-- Sentence Fill Slots -->
+                <div class="w-full space-y-2">
+                    <div class="text-xs sm:text-sm font-black text-slate-400 text-center">請依序點擊下方字卡填入空格：</div>
+                    <div id="sentence-container" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-4 bg-amber-50/60 rounded-3xl border-3 border-dashed border-amber-300 min-h-[90px]">
+                        <!-- Dynamic Slots -->
+                    </div>
+                </div>
+
+                <!-- Word Card Options Pool -->
+                <div class="w-full">
+                    <div class="text-xs sm:text-sm font-black text-slate-400 text-center mb-3">請選擇字卡：</div>
+                    <div id="word-pool" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4 justify-items-center min-h-[100px]">
+                        <!-- Dynamic Word Cards -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-4 pt-2">
+                    <button onclick="clearCurrentSentence()" class="px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black rounded-2xl transition flex items-center gap-2 text-sm sm:text-base">
+                        <i class="fas fa-undo"></i> 清除答案
+                    </button>
+                    <button id="btn-submit" onclick="submitSentence()" class="px-8 sm:px-10 py-3 sm:py-3.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-lg sm:text-xl rounded-2xl shadow-lg shadow-emerald-200 transition flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i> 確認提交！
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Winner Result Screen -->
+        <div id="screen-result" class="hidden bg-white/95 backdrop-blur rounded-3xl p-8 md:p-12 shadow-2xl border-4 border-amber-400 max-w-2xl mx-auto text-center space-y-6 bounce-in">
+            <div id="winner-trophy" class="text-7xl animate-bounce">🏆</div>
+            <h2 id="winner-title" class="text-2xl md:text-4xl font-black text-slate-800">遊戲結束！</h2>
+            
+            <div id="result-score-container" class="grid grid-cols-2 gap-4 my-6">
+                <div id="res-p1-box" class="p-4 bg-blue-50 border-2 border-blue-200 rounded-2xl">
+                    <div id="res-p1-label" class="text-blue-600 font-bold text-sm sm:text-base">🐶 玩家一 (藍隊)</div>
+                    <div id="final-p1-score" class="text-4xl sm:text-5xl font-black text-blue-700 mt-1">0</div>
+                </div>
+                <div id="res-p2-box" class="p-4 bg-rose-50 border-2 border-rose-200 rounded-2xl">
+                    <div class="text-rose-600 font-bold text-sm sm:text-base">🐱 玩家二 (紅隊)</div>
+                    <div id="final-p2-score" class="text-4xl sm:text-5xl font-black text-rose-700 mt-1">0</div>
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button onclick="returnToMenu()" class="px-5 sm:px-6 py-3 sm:py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl shadow-md transition text-base sm:text-lg">
+                    <i class="fas fa-th-large mr-2"></i>返回主選單
+                </button>
+                <button onclick="restartCurrentGame()" class="px-5 sm:px-6 py-3 sm:py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-md transition text-base sm:text-lg">
+                    <i class="fas fa-redo mr-2"></i>再玩一次
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Instructions -->
+    <div id="modal-instructions" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 space-y-4 shadow-2xl border-4 border-sky-300">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-2xl font-black text-sky-600 flex items-center gap-2">
+                    <i class="fas fa-child"></i> 遊戲玩法說明
+                </h3>
+                <button onclick="hideInstructions()" class="text-slate-400 hover:text-slate-600 text-3xl font-bold">&times;</button>
+            </div>
+            
+            <div class="space-y-3 text-slate-700 text-base leading-relaxed">
+                <div class="p-3 bg-sky-50 rounded-2xl border border-sky-200">
+                    <h4 class="font-black text-sky-800 mb-1">🎧 聽音選字規則：</h4>
+                    <ul class="list-disc list-inside space-y-1 font-bold text-slate-700 text-sm">
+                        <li>每回合系統會自動播放廣東話語音題目。</li>
+                        <li>點擊「🔊 再聽一次」按鈕可以重新聽語音題目。</li>
+                        <li>點擊字詞卡時會聽見該字詞的發音，依序填入空格。</li>
+                        <li>答對獲得 10 分並朗讀完整句子；答錯不給分，自動播放正確答案並進入下一題。</li>
+                    </ul>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200">
+                    <h4 class="font-black text-amber-800 mb-1">📚 學習句式與詞彙：</h4>
+                    <p class="text-xs text-amber-900 leading-normal font-bold">
+                        <b>句式一：</b> 地點 有 設施<br>
+                        <b>句式二：</b> 我到 設施 活動。（限定：元朗公園、百鳥塔、觀鳥、觀景、瀑布花園、大草坪、野餐）
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="hideInstructions()" class="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg rounded-2xl transition">
+                我知道了，開始遊戲！
+            </button>
+        </div>
+    </div>
+
+    <!-- Web Audio & Game Engine Logic -->
+    <script>
+        // Pattern 1 Valid Combinations Database (Strict Mapping - 9 combinations)
+        const VALID_P1_COMBINATIONS = [
+            { location: '元朗公園', facility: '百鳥塔', icon: '🗼' },
+            { location: '元朗公園', facility: '瀑布花園', icon: '🌊' },
+            { location: '元朗公園', facility: '大草坪', icon: '🏕️' },
+            { location: '元朗公園', facility: '無障礙通道', icon: '♿' },
+            { location: '天水圍公園兒童遊樂場', facility: '無障礙通道', icon: '♿' },
+            { location: '天水圍公園兒童遊樂場', facility: '網型鞦韆', icon: '🎠' },
+            { location: '天水圍公園兒童遊樂場', facility: '滑梯', icon: '🛝' },
+            { location: '天水圍公園兒童遊樂場', facility: '繩網', icon: '🕸️' },
+            { location: '天水圍公園兒童遊樂場', facility: '沙池', icon: '🏖️' }
+        ];
+
+        // Pattern 2 Valid Combinations Database (Strict Mapping - 10 combinations)
+        const VALID_P2_COMBINATIONS = [
+            { facility: '元朗公園', activity: '觀鳥', icon: '🐦' },
+            { facility: '元朗公園', activity: '觀景', icon: '🌄' },
+            { facility: '元朗公園', activity: '野餐', icon: '🧺' },
+            { facility: '百鳥塔', activity: '觀鳥', icon: '🐦' },
+            { facility: '百鳥塔', activity: '觀景', icon: '🌄' },
+            { facility: '瀑布花園', activity: '觀鳥', icon: '🐦' },
+            { facility: '瀑布花園', activity: '觀景', icon: '🌄' },
+            { facility: '大草坪', activity: '觀鳥', icon: '🐦' },
+            { facility: '大草坪', activity: '觀景', icon: '🌄' },
+            { facility: '大草坪', activity: '野餐', icon: '🧺' }
+        ];
+
+        // Full Vocabulary Pools for Distractors
+        const ALL_LOCATIONS = ['元朗公園', '天水圍公園兒童遊樂場'];
+        const ALL_FACILITIES = ['百鳥塔', '瀑布花園', '大草坪', '無障礙通道', '網型鞦韆', '滑梯', '繩網', '沙池'];
+        const ALL_ACTIVITIES = ['觀鳥', '觀景', '野餐'];
+
+        // State Variables
+        let playerMode = 1; // 1 = Single Player (5 questions), 2 = Two Players (10 questions)
+        let currentMode = 1;
+        let currentRound = 1;
+        let totalRounds = 5;
+        let currentPlayer = 1;
+        let scores = { p1: 0, p2: 0 };
+
+        let currentQuestion = null;
+        let selectedWords = [];
+        let poolWords = []; // Fixed sequence of pool words per round
+
+        // Web Audio API Synthesizer
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSoundEffect(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                const freqs = [523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((f, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + i * 0.1);
+                    gain.gain.setValueAtTime(0.3, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.3);
+                });
+            } else if (type === 'wrong') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        // Cantonese Speech Pronunciation Fixer
+        function fixCantonesePronunciation(text) {
+            return text
+                .replace(/無障礙通道/g, '冇障礙通道')
+                .replace(/繩網/g, '成網')
+                .replace(/無/g, '冇')
+                .replace(/繩/g, '成');
+        }
+
+        // Cantonese Speech Synthesis
+        function speakText(text, callback) {
+            if (!('speechSynthesis' in window)) {
+                if (callback) callback();
+                return;
+            }
+            window.speechSynthesis.cancel();
+            
+            const fixedSpeechText = fixCantonesePronunciation(text);
+            const utterance = new SpeechSynthesisUtterance(fixedSpeechText);
+            utterance.lang = 'zh-HK';
+            utterance.rate = 0.85;
+            
+            if (callback) {
+                utterance.onend = callback;
+                utterance.onerror = callback;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playTargetAudio() {
+            if (currentQuestion) {
+                speakText(currentQuestion.speechPrompt);
+            }
+        }
+
+        function showScreen(screenId) {
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+            if (screenId === 'screen-game') {
+                document.getElementById('screen-game').classList.add('flex');
+            }
+        }
+
+        function returnToMenu() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            showScreen('screen-menu');
+        }
+
+        function showInstructions() {
+            document.getElementById('modal-instructions').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('modal-instructions').classList.add('hidden');
+        }
+
+        function restartCurrentGame() {
+            startGame(currentMode);
+        }
+
+        function selectPlayerMode(mode) {
+            playerMode = mode;
+            const btn1 = document.getElementById('btn-mode-1p');
+            const btn2 = document.getElementById('btn-mode-2p');
+            if (mode === 1) {
+                btn1.className = "flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-amber-500 text-white shadow-md flex items-center justify-center gap-2";
+                btn2.className = "flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-white text-slate-600 hover:bg-amber-100 flex items-center justify-center gap-2";
+            } else {
+                btn2.className = "flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-amber-500 text-white shadow-md flex items-center justify-center gap-2";
+                btn1.className = "flex-1 py-3 px-4 rounded-xl font-black text-base md:text-lg transition bg-white text-slate-600 hover:bg-amber-100 flex items-center justify-center gap-2";
+            }
+        }
+
+        function startGame(mode) {
+            initAudio();
+            currentMode = mode;
+            currentRound = 1;
+            currentPlayer = 1;
+            scores = { p1: 0, p2: 0 };
+            
+            totalRounds = playerMode === 1 ? 5 : 10;
+
+            const p2Card = document.getElementById('p2-card');
+            const scoreboardGrid = document.getElementById('scoreboard-grid');
+            const p1Label = document.getElementById('p1-label');
+            const p1Name = document.getElementById('p1-name');
+            const resP2Box = document.getElementById('res-p2-box');
+            const resScoreGrid = document.getElementById('result-score-container');
+
+            if (playerMode === 1) {
+                p2Card.classList.add('hidden');
+                scoreboardGrid.className = "grid grid-cols-1 gap-4 max-w-xs mx-auto";
+                p1Label.innerText = "單人模式";
+                p1Name.innerText = "挑戰者 🐶";
+                resP2Box.classList.add('hidden');
+                resScoreGrid.className = "grid grid-cols-1 gap-4 max-w-xs mx-auto my-6";
+            } else {
+                p2Card.classList.remove('hidden');
+                scoreboardGrid.className = "grid grid-cols-2 gap-4";
+                p1Label.innerText = "玩家一 (P1)";
+                p1Name.innerText = "藍隊小狗";
+                resP2Box.classList.remove('hidden');
+                resScoreGrid.className = "grid grid-cols-2 gap-4 my-6";
+            }
+
+            updateScoreboard();
+            showScreen('screen-game');
+            loadRound();
+        }
+
+        function loadRound() {
+            selectedWords = [];
+            document.getElementById('current-round').innerText = currentRound;
+            document.getElementById('total-rounds').innerText = totalRounds;
+
+            const turnBanner = document.getElementById('turn-banner');
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+
+            let turnSpeech = "";
+
+            if (playerMode === 1) {
+                turnBanner.innerText = `第 ${currentRound} 題`;
+                turnBanner.className = "text-xs sm:text-lg font-black px-3 sm:px-5 py-1.5 rounded-full bg-blue-100 text-blue-700";
+                p1Card.classList.add('glow-p1');
+                p1Card.classList.remove('scale-90', 'opacity-60');
+                p1Card.classList.add('scale-100');
+            } else {
+                if (currentPlayer === 1) {
+                    turnBanner.innerText = "輪到：到小狗啦！ (藍隊 🐶)";
+                    turnBanner.className = "text-xs sm:text-lg font-black px-3 sm:px-5 py-1.5 rounded-full bg-blue-100 text-blue-700 animate-pulse";
+                    p1Card.classList.add('glow-p1', 'scale-115', 'z-10');
+                    p1Card.classList.remove('scale-90', 'opacity-60');
+                    p2Card.classList.remove('glow-p2', 'scale-115', 'z-10');
+                    p2Card.classList.add('scale-90', 'opacity-60');
+                    turnSpeech = "到小狗啦！";
+                } else {
+                    turnBanner.innerText = "輪到：到小貓啦！ (紅隊 🐱)";
+                    turnBanner.className = "text-xs sm:text-lg font-black px-3 sm:px-5 py-1.5 rounded-full bg-rose-100 text-rose-700 animate-pulse";
+                    p2Card.classList.add('glow-p2', 'scale-115', 'z-10');
+                    p2Card.classList.remove('scale-90', 'opacity-60');
+                    p1Card.classList.remove('glow-p1', 'scale-115', 'z-10');
+                    p1Card.classList.add('scale-90', 'opacity-60');
+                    turnSpeech = "到小貓啦！";
+                }
+            }
+
+            let patternType = currentMode;
+            if (currentMode === 3) {
+                patternType = (currentRound % 2 === 1) ? 1 : 2;
+            }
+
+            if (patternType === 1) {
+                const combo = VALID_P1_COMBINATIONS[Math.floor(Math.random() * VALID_P1_COMBINATIONS.length)];
+
+                currentQuestion = {
+                    pattern: 1,
+                    speechPrompt: `${combo.location}有${combo.facility}。`,
+                    targetParts: [
+                        { type: 'location', target: combo.location },
+                        { type: 'fixed', target: '有' },
+                        { type: 'facility', target: combo.facility },
+                        { type: 'fixed', target: '。' }
+                    ],
+                    icon: combo.icon
+                };
+            } else {
+                const combo = VALID_P2_COMBINATIONS[Math.floor(Math.random() * VALID_P2_COMBINATIONS.length)];
+
+                currentQuestion = {
+                    pattern: 2,
+                    speechPrompt: `我到${combo.facility}${combo.activity}。`,
+                    targetParts: [
+                        { type: 'fixed', target: '我到' },
+                        { type: 'facility', target: combo.facility },
+                        { type: 'activity', target: combo.activity },
+                        { type: 'fixed', target: '。' }
+                    ],
+                    icon: combo.icon
+                };
+            }
+
+            // Generate Pool Words list once per round
+            let rawPool = [];
+            if (currentQuestion.pattern === 1) {
+                const targetLoc = currentQuestion.targetParts[0].target;
+                const targetFac = currentQuestion.targetParts[2].target;
+                rawPool.push(targetLoc, targetFac);
+
+                const otherLoc = ALL_LOCATIONS.find(l => l !== targetLoc) || '元朗公園';
+                const otherFac = ALL_FACILITIES.find(f => f !== targetFac) || '滑梯';
+                const actWord = ALL_ACTIVITIES[Math.floor(Math.random() * ALL_ACTIVITIES.length)];
+
+                rawPool.push(otherLoc, otherFac, actWord);
+            } else {
+                const targetFac = currentQuestion.targetParts[1].target;
+                const targetAct = currentQuestion.targetParts[2].target;
+                rawPool.push(targetFac, targetAct);
+
+                const otherFac = ALL_FACILITIES.find(f => f !== targetFac) || '百鳥塔';
+                const otherAct = ALL_ACTIVITIES.find(a => a !== targetAct) || '野餐';
+
+                rawPool.push(otherFac, otherAct);
+            }
+
+            poolWords = Array.from(new Set(rawPool.filter(Boolean))).sort(() => Math.random() - 0.5);
+
+            document.getElementById('target-icon').innerText = currentQuestion.icon;
+            document.getElementById('btn-submit').disabled = false;
+
+            renderSlots();
+            renderWordPool();
+
+            if (playerMode === 2 && turnSpeech) {
+                speakText(turnSpeech, () => {
+                    setTimeout(() => playTargetAudio(), 400);
+                });
+            } else {
+                setTimeout(() => {
+                    playTargetAudio();
+                }, 500);
+            }
+        }
+
+        function renderSlots() {
+            const container = document.getElementById('sentence-container');
+            container.innerHTML = '';
+
+            currentQuestion.targetParts.forEach((part, idx) => {
+                if (part.type === 'fixed' && !selectedWords[idx]) {
+                    selectedWords[idx] = part.target;
+                }
+
+                const val = selectedWords[idx];
+
+                const slot = document.createElement('div');
+                slot.className = `px-4 sm:px-5 py-2.5 sm:py-3 min-w-[90px] sm:min-w-[100px] h-14 sm:h-16 border-3 rounded-2xl flex items-center justify-center font-black text-lg sm:text-2xl transition-all shadow-sm ${
+                    val 
+                    ? 'bg-amber-400 border-amber-500 text-amber-950 scale-100 shadow-md' 
+                    : 'bg-white border-dashed border-amber-300 text-slate-300'
+                }`;
+
+                slot.innerText = val || `(${getPartName(part.type)})`;
+
+                if (val && part.type !== 'fixed') {
+                    slot.classList.add('cursor-pointer', 'hover:bg-amber-300');
+                    slot.onclick = () => {
+                        playSoundEffect('click');
+                        selectedWords[idx] = null;
+                        renderSlots();
+                        renderWordPool();
+                    };
+                }
+
+                container.appendChild(slot);
+            });
+        }
+
+        function getPartName(type) {
+            switch(type) {
+                case 'location': return '地點';
+                case 'facility': return '設施';
+                case 'activity': return '活動';
+                default: return '字卡';
+            }
+        }
+
+        function renderWordPool() {
+            const poolContainer = document.getElementById('word-pool');
+            poolContainer.innerHTML = '';
+
+            poolWords.forEach(word => {
+                const isSelected = selectedWords.includes(word);
+
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = "w-full flex justify-center";
+
+                const card = document.createElement('button');
+                card.className = `word-card w-full py-3 sm:py-4 rounded-2xl font-black text-base sm:text-xl transition-all border-3 ${
+                    isSelected 
+                    ? 'opacity-0 pointer-events-none' 
+                    : 'bg-white border-amber-300 text-amber-900 hover:bg-amber-100 hover:scale-105 active:scale-95 shadow-md'
+                }`;
+                card.innerText = word;
+
+                card.onclick = () => {
+                    if (isSelected) return;
+                    playSoundEffect('click');
+                    speakText(word);
+                    selectWord(word);
+                };
+
+                cardWrapper.appendChild(card);
+                poolContainer.appendChild(cardWrapper);
+            });
+        }
+
+        function selectWord(word) {
+            for (let i = 0; i < currentQuestion.targetParts.length; i++) {
+                if (!selectedWords[i] && currentQuestion.targetParts[i].type !== 'fixed') {
+                    selectedWords[i] = word;
+                    break;
+                }
+            }
+            renderSlots();
+            renderWordPool();
+        }
+
+        function clearCurrentSentence() {
+            playSoundEffect('click');
+            currentQuestion.targetParts.forEach((part, i) => {
+                if (part.type !== 'fixed') {
+                    selectedWords[i] = null;
+                }
+            });
+            renderSlots();
+            renderWordPool();
+        }
+
+        function submitSentence() {
+            const isComplete = currentQuestion.targetParts.every((part, i) => !!selectedWords[i]);
+
+            if (!isComplete) {
+                playSoundEffect('wrong');
+                showToast("⚠️ 請先將句子填滿喔！");
+                return;
+            }
+
+            document.getElementById('btn-submit').disabled = true;
+
+            let isCorrect = true;
+            currentQuestion.targetParts.forEach((part, i) => {
+                if (selectedWords[i] !== part.target) {
+                    isCorrect = false;
+                }
+            });
+
+            const formedText = selectedWords.join('');
+
+            if (isCorrect) {
+                playSoundEffect('correct');
+
+                if (currentPlayer === 1) scores.p1 += 10;
+                else scores.p2 += 10;
+
+                updateScoreboard();
+                showToast(`🎉 太棒了！答對了！`, true);
+
+                speakText(formedText, () => {
+                    setTimeout(nextTurn, 800);
+                });
+
+            } else {
+                playSoundEffect('wrong');
+                showToast("❌ 答錯了！正確句子是：", false);
+
+                speakText(currentQuestion.speechPrompt, () => {
+                    setTimeout(nextTurn, 1000);
+                });
+            }
+        }
+
+        function nextTurn() {
+            if (currentRound >= totalRounds) {
+                endGame();
+            } else {
+                currentRound++;
+                if (playerMode === 2) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                loadRound();
+            }
+        }
+
+        function updateScoreboard() {
+            document.getElementById('p1-score').innerText = scores.p1;
+            document.getElementById('p2-score').innerText = scores.p2;
+        }
+
+        function endGame() {
+            document.getElementById('final-p1-score').innerText = scores.p1;
+            document.getElementById('final-p2-score').innerText = scores.p2;
+
+            const trophy = document.getElementById('winner-trophy');
+            const winnerTitle = document.getElementById('winner-title');
+
+            if (playerMode === 1) {
+                trophy.innerText = "🏆";
+                winnerTitle.innerText = `挑戰完成！獲得 ${scores.p1} 分！`;
+                winnerTitle.className = "text-2xl md:text-4xl font-black text-amber-600";
+            } else {
+                if (scores.p1 > scores.p2) {
+                    trophy.innerText = "🐶🏆";
+                    winnerTitle.innerText = "恭喜 玩家一 (藍隊) 獲得勝利！";
+                    winnerTitle.className = "text-2xl md:text-4xl font-black text-blue-600";
+                } else if (scores.p2 > scores.p1) {
+                    trophy.innerText = "🐱🏆";
+                    winnerTitle.innerText = "恭喜 玩家二 (紅隊) 獲得勝利！";
+                    winnerTitle.className = "text-2xl md:text-4xl font-black text-rose-600";
+                } else {
+                    trophy.innerText = "🤝🏆";
+                    winnerTitle.innerText = "太厲害了！雙方平手！";
+                    winnerTitle.className = "text-2xl md:text-4xl font-black text-amber-600";
+                }
+            }
+
+            playSoundEffect('correct');
+            triggerConfetti();
+            showScreen('screen-result');
+        }
+
+        function showToast(msg, isSuccess = false) {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast-notification fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3.5 rounded-2xl text-white font-black text-lg shadow-2xl z-50 flex items-center gap-2 ${
+                isSuccess ? 'bg-emerald-500 border-2 border-emerald-300' : 'bg-rose-500 border-2 border-rose-300'
+            }`;
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+            for (let i = 0; i < 100; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 10 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    rotation: Math.random() * 360,
+                    rotSpeed: Math.random() * 6 - 3
+                });
+            }
+
+            let animationFrame;
+            const startTime = Date.now();
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotSpeed;
+                });
+
+                if (Date.now() - startTime < 4000) {
+                    animationFrame = requestAnimationFrame(draw);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            draw();
+        }
+
+        window.onresize = () => {
+            const canvas = document.getElementById('confetti-canvas');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+    </script>
+</body>
+</html>
